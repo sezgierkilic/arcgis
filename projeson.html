@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+            integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"
+            integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T"
+            crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no"/>
+    <title>Simple Map</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/3.25/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" href="https://js.arcgis.com/3.25/esri/css/esri.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css"
+          integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+    <style>
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+        }
+
+        body {
+            background-color: white;
+            overflow: hidden;
+            font-family: "Trebuchet MS";
+        }
+
+        #header {
+            position: relative;
+            margin: 5px;
+            border: solid 2px #224a54;
+
+        }
+
+        #leftPane {
+            margin: 2px;
+            padding: 2px;
+            border: solid 2px #224a54;
+            width: 20%;
+        }
+
+        #mapDiv {
+		
+            margin: 2px;
+            border: solid 2px #224a54;
+            -moz-border-radius: 4px;
+        }
+
+        #footer {
+            margin: 2px;
+            border: solid 2px #224a54;
+
+        }
+        .my_select {
+            z-index: 100;
+            bottom: 10px;
+            padding: 5px;
+        }
+
+        .SchoolBtn {
+            z-index: 100;
+            top: 10px;
+            right: 50px;
+        }
+
+        .HomeBtn {
+            z-index: 100;
+            top: 50px;
+            right: 50px;
+        }
+        .resim{
+            width: 50px;
+            height: 50px;
+            float:left;
+        }
+        .baslik{
+           text-align: center;
+            color:#224a54 ;
+            width: 900px;
+            vertical-align: top;
+            margin-left: 140px;
+        }
+		.modal {
+			display: none; /* Hidden by default */
+			position: fixed; /* Stay in place */
+			z-index: 1000; /* Sit on top */
+			padding-top: 100px; /* Location of the box */
+			left: 0;
+			top: 0;
+			width: 100%; /* Full width */
+			height: 100%; /* Full height */
+			overflow: auto; /* Enable scroll if needed */
+			background-color: rgb(0,0,0); /* Fallback color */
+			background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+		}
+
+		/* Modal Content */
+		.modal-content {
+			background-color: #fefefe;
+			z-index:150;
+			margin: auto;
+			padding: 20px;
+			border: 1px solid #888;
+			width: 80%;
+			}
+
+		/* The Close Button */
+		.close {
+			color: #aaaaaa;
+			float: right;
+			font-size: 28px;
+			font-weight: bold;
+			}
+
+		.close:hover,
+		.close:focus {
+			color: #000;
+			text-decoration: none;
+			cursor: pointer;
+			}
+    </style>
+    <script src="https://js.arcgis.com/3.25/"></script>
+    <script>
+        var map, toolbar, symbol, geomTask;
+		
+        require([
+            "esri/geometry/Geometry",
+            "esri/geometry/Point",
+			"esri/toolbars/draw",
+			"dijit/registry",
+            "esri/geometry/Polyline",
+            "esri/geometry/Polygon",
+            "esri/graphic",
+            "esri/symbols/SimpleMarkerSymbol",
+            "esri/symbols/SimpleLineSymbol",
+            "esri/symbols/SimpleFillSymbol",
+            "esri/Color",
+            "esri/InfoTemplate",
+            "esri/geometry/webMercatorUtils",
+			"esri/SpatialReference",
+            "esri/map",
+            "dojo/dom", "dojo/on", "dojo/_base/array", "dojo/parser",
+            "dojo/dom-construct",
+            "esri/dijit/BasemapGallery",
+            "dijit/layout/AccordionContainer", "dijit/layout/ContentPane", "dijit/form/Button", "dijit/WidgetSet","dijit/layout/BorderContainer",
+            "dojo/domReady!"], function (Geometry, 
+										Point, Draw, registry,Polyline, Polygon, graphic,
+                                         SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol,
+                                         Color, InfoTemplate,
+                                         webMercatorUtils,SpatialReference,
+                                         Map,
+                                         dom, on, array, parser,
+                                         domConstruct,BasemapGallery ) {
+
+            parser.parse();
+			
+			
+            map = new Map("mapDiv", {
+                basemap: "topo",
+                center: [35.425, 39.451],
+                zoom: 6
+            });
+		
+            
+            dojo.connect(map, "onMouseMove", showCoordinates);
+            dojo.connect(map, "onMouseDrag", showCoordinates);
+			dojo.connect(map,"onLoad", createToolbar);
+			
+			registry.forEach(function(d) {
+          // d is a reference to a dijit
+          // could be a layout container or a button
+			if ( d.declaredClass === "dijit.form.Button" ) {
+				d.on("click", activateTool);
+			}
+			});
+
+			function activateTool() {
+				var tool = this.label.toUpperCase().replace(/ /g, "_");
+				toolbar.activate(Draw[tool]);
+				map.hideZoomSlider();
+			}
+
+			function createToolbar(themap) {
+				toolbar = new Draw(map);
+				toolbar.on("draw-end", addToMap);
+			}
+
+			function addToMap(evt) {
+				var symbol;
+				toolbar.deactivate();
+				map.showZoomSlider();
+				switch (evt.geometry.type) {
+				case "point":
+				case "multipoint":
+				symbol = new SimpleMarkerSymbol();
+					break;
+				case "polyline":
+				symbol = new SimpleLineSymbol();
+					break;
+				default:
+				symbol = new SimpleFillSymbol();
+				break;
+				}
+				var graphic1 = new graphic(evt.geometry, symbol);
+				map.graphics.add(graphic1);
+			}
+		
+
+               
+            function showCoordinates(evt) {
+                var mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
+                dojo.byId("info1").innerHTML = mp.x.toFixed(3) + ", " + mp.y.toFixed(3);
+            }		             
+                
+                var a = map.getZoom();
+
+                var element = document.getElementById("zoomvalue");
+                element.value = a;
+            
+           zoomToFn = function (zoomLat, zoomLong) {
+                zoomLat;
+                zoomLong;
+                var location = new Point(zoomLat, zoomLong);
+				var pointInfoTemplate = new InfoTemplate("My Home");
+				var pointSymbol = new SimpleMarkerSymbol("circle", 20, null, new Color([205, 51, 51, 0.50]))
+				 pointGraphic = new graphic(location, pointSymbol).setInfoTemplate(pointInfoTemplate);
+
+
+                map.graphics.add(pointGraphic);
+                map.centerAndZoom(location, 14);
+
+                
+            }
+            MyFunction = function () {
+                var zoom = document.getElementById("zoomvalue").value;
+                map.setZoom(zoom);
+                return zoom;
+            }
+            userFunction = function () {    
+				var zoomLat = parseFloat(document.getElementById("lattext").value);
+                var zoomLong = parseFloat(document.getElementById("longtext").value);
+                if (document.getElementById("lattext").value  == "" || document.getElementById("longtext").value== "") {
+                 alert("longitude and latitude area is not null.");
+                }
+				else{			
+				
+				 map.setZoom(zoomLat, zoomLong);
+                zoomToFn(zoomLat, zoomLong);
+				
+				}         
+            }
+			
+			clearMap = function () {			
+				map.graphics.clear();
+			}
+			
+			
+            var basemapGallery = new BasemapGallery({
+                showArcGISBasemaps: true,
+                map: map
+            }, "basemapGallery");
+            basemapGallery.startup();
+
+            basemapGallery.on("error", function(msg) {
+                console.log("basemap gallery error:  ", msg);
+            });
+			
+			
+			
+			 createLine = function(Lon1,Lat1, Lon2, Lat2){
+			 var lon1 = parseFloat(document.getElementById("Lon1").value);
+             var lat1 = parseFloat(document.getElementById("Lat1").value);
+			 var lon2 = parseFloat(document.getElementById("Lon2").value);
+             var lat2 = parseFloat(document.getElementById("Lat2").value);
+			 var point1 = new esri.geometry.Point(lon1, lat1, map.SpatialReference);      
+			 var point2 = new esri.geometry.Point(lon2, lat2, map.SpatialReference);      
+			 var line = new esri.geometry.Polyline(map.SpatialReference);       
+			 line.addPath([point1, point2]);       
+			 var lineSymbol = new SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color([255,0,0,0.5]),3);     
+			 var pointSymbol = new SimpleMarkerSymbol().setColor(new dojo.Color([255,0,0, 0.5]));      
+			 map.graphics.add(new graphic(point1, pointSymbol));       
+			 map.graphics.add(new graphic(point2, pointSymbol));       
+			 map.graphics.add(new graphic(line, lineSymbol));
+			 }
+			 	// Get the modal
+			var modal = document.getElementById('myModal');
+
+			// Get the button that opens the modal
+			var btn = document.getElementById("myBtn");
+
+			// Get the <span> element that closes the modal
+			var span = document.getElementsByClassName("close")[0];
+
+			// When the user clicks the button, open the modal 
+			createPoly = function() {
+			modal.style.display = "block";
+			}
+
+			// When the user clicks on <span> (x), close the modal
+			span.onclick = function() {
+			modal.style.display = "none";
+}
+
+			// When the user clicks anywhere outside of the modal, close it
+			window.onclick = function(event) {
+			if (event.target == modal) {
+			modal.style.display = "none";
+				}
+			}
+			var arr = [];
+			AddPoint= function(lon,lat){
+			 
+			var Lon = parseFloat(document.getElementById("lon").value);
+            var Lat = parseFloat(document.getElementById("lat").value);
+			
+			arr.push(Lon);
+			arr.push(Lat);
+			
+			//document.getElementById("Textarea").value = document.getElementById("Textarea").value + " " +Lon+","+Lat;
+			document.getElementById("Textarea").value=arr.toString();
+			
+			} 
+			selectpoint= function(){
+			var line = new esri.geometry.Polyline(map.SpatialReference);
+			var pointArr=[];
+			for ( var i=0; i<=arr.length; i+=2){
+					
+						var lon = parseFloat(arr[i]);				
+						var lat = parseFloat(arr[i+1]); 
+					
+					var point = new esri.geometry.Point(lon, lat, map.SpatialReference); 
+					pointArr.push(point);
+				
+			}		
+				
+				line.addPath(pointArr);       
+				var lineSymbol = new SimpleLineSymbol(esri.symbol.SimpleLineSymbol.STYLE_SOLID, new dojo.Color([255,0,0,0.5]),3);     
+				var pointSymbol = new SimpleMarkerSymbol().setColor(new dojo.Color([255,0,0, 0.5]));
+				map.graphics.add(new graphic(line, lineSymbol));			 
+			
+			
+			
+			
+			}
+        });
+		
+        //kodumuz asenkron olduğundan function pointi görmedkte zorlandı. Bu yüzden patlamasın diye 2 seçeneğimiz var.
+        // ya fonksiyon adını global yapcaz yada requireın başına tanımlicaz
+
+    </script>
+</head>
+
+<body class="claro">
+<div id="mainWindow" dojotype="dijit.layout.BorderContainer" design="headline" gutters="false"
+     style='width:100%; height:100%;'>
+    <div id="header" dojotype="dijit.layout.ContentPane" region="top">
+       <img src="C:\Users\Lenovo\Desktop\CEng\staj\learn arcgis\glb_logo.png" class="resim">
+            <H1 ” class="baslik">Sezgi's Project in Globetech</H1>
+    </div>
+    <div dojotype="dijit.layout.ContentPane" id="leftPane" region="left">
+        <div dojoType="dijit.layout.AccordionContainer" id="accordion">
+            <div dojotype="dijit.layout.ContentPane" title="Options">
+                <div id="legendDiv">
+                   <li> <button id="zoom-to-point" onclick="zoomToFn(33.444,39.882)" class="SchoolBtn"> Zoom To School</button></li><br>
+                    <li><button id="zoom-to-home" onclick="zoomToFn(32.626,39.998)" class="HomeBtn"> Zoom To Home</button></li><br>
+                    <li> <select id="zoomvalue" class="my_select">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                    <button id="zoom" class="my_select" onclick="MyFunction()">Zoom</button></li><br>
+
+                    <li>Latitude: <input type="number" name="zoomLat" id="lattext" class="numberLat"/><br>
+                    Longitude: <input type="number" name="zoomLong" id="longtext" class="numberLong"/><br>
+                    <input type="submit" value="Submit" onclick="userFunction()">
+					</li><br>
+					<li><input type="submit" value="Clear Map" onclick="clearMap()"> </input>
+                    </li><br>
+					<li> Latitude1: <input type="number" name="Lat1" id="Lat1" class="numberLat"/><br>
+                    Longitude1: <input type="number" name="Lon1" id="Lon1" class="numberLong"/><br>
+					Latitude2: <input type="number" name="Lat2" id="Lat2" class="numberLat"/><br>
+                    Longitude2: <input type="number" name="Lon2" id="Lon2" class="numberLong"/><br>
+					<input type="submit" value="Create Line" onclick="createLine(Lon1,Lat1, Lon2, Lat2)"> </input>
+					</li>
+					<li><input type="submit" value="Create Polyline" onclick="createPoly()"> </input>
+					</li>	
+			
+                </div>
+            </div>
+			
+            <div dojotype="dijit.layout.ContentPane" title="Map Type">
+                <div id="basemapGallery">
+
+
+                </div>
+            </div>
+			<div dojotype="dijit.layout.ContentPane" title="Draw to Map">
+                <div id="draw">
+				<button data-dojo-type="dijit/form/Button">Point</button>
+				<button data-dojo-type="dijit/form/Button">Multi Point</button>    
+				<button data-dojo-type="dijit/form/Button">Polygon</button>
+				<button data-dojo-type="dijit/form/Button">Freehand Polyline</button>
+				<button data-dojo-type="dijit/form/Button">Freehand Polygon</button>      
+				<button data-dojo-type="dijit/form/Button">Arrow</button>
+				<button data-dojo-type="dijit/form/Button">Triangle</button>
+				<button data-dojo-type="dijit/form/Button">Circle</button>
+				<button data-dojo-type="dijit/form/Button">Ellipse</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mapDiv" dojotype="dijit.layout.ContentPane" region="center">
+        <span id="info1" style="position:absolute; right:100px; bottom:25px; color:#8d0816; z-index:50; font-size: large;"></span>
+    </div>
+    <div id="footer" dojotype="dijit.layout.ContentPane" region="bottom">
+        <div id="info">
+            <p align="center">©2018 all rights reserved </p>
+        </div>
+    </div>
+</div>
+<div id="myModal" class="modal">
+							<div class="modal-content">
+							<span class="close">&times;</span>							
+							Latitude: <input style="width:100px;"type="number" name="zoomLat" id="lat" />
+							Longitude: <input style="width:100px;"type="number" name="zoomLong" id="lon"/>
+							<button type="button" value="Add Point" style="width:150px;"onclick="AddPoint()"> add point</button>							
+							<textarea  style="float:right;"rows="4" cols="150" id="Textarea"></textarea>						
+							<button style="width:65px;" type="button" value="Submit" onclick="selectpoint()"> select point</button>
+							
+							</div>
+
+						</div>
+</body>
+</html>
